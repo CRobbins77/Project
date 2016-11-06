@@ -113,6 +113,7 @@ summary(farms)
 #Display structure of the data frame (individual data types)
 str(farms)
 
+#LEFT OFF HERE
 
 
 
