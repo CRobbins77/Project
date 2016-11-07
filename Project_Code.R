@@ -113,7 +113,51 @@ summary(farms)
 #Display structure of the data frame (individual data types)
 str(farms)
 
-#LEFT OFF HERE
+#Check if there are any duplicate records
+library(data.table)
+dt = data.table(farms)
+dt[duplicated("County"), cbind(.SD[1], number = .N), by = "County"]
 
+#Check if there are any duplicate Counties
+any(duplicated(farms$"County"))
 
+sum(duplicated(farms$County))
+
+#Step 1 - Create data frame with a list of ids and the number of times they occur
+length(unique(farms$County))
+length(unique(farms$County)) == nrow(farms)
+
+n_occur <- data.frame(table(farms$County))
+n_occur[n_occur$Freq > 1,]
+farms[farms$County %in% n_occur$Var1[n_occur$Freq > 1],]
+
+#Load raw data for County FIPS codes
+FIPS <- read.csv("ny_county_FIPS.csv", header = TRUE)
+
+#Display structure of the data frame (individual data types)
+str(FIPS)
+
+#Change the order of columns so County is first for appending
+FIPS <- FIPS[,c("County","FIPS")]
+
+#Change county field from lowercase to uppercase prior to merge
+FIPS <- as.data.frame(sapply(FIPS, toupper))
+
+#Append County FIPS to farms dataset
+farms_FIPS <- merge(FIPS,farms, by=c("County"))
+
+#Note: only 53 farms records appended to the FIPS lookup
+
+#List rows of data that have missing values
+farms_FIPS[!complete.cases(farms_FIPS),]
+
+#Results of analysis indicate that Putnum, Seneca and Westchester have missing data under "Cropped_Acres" and "Acres_Rented"
+
+#Load the mice package in R (imputing missing values with plausible data values)
+
+#Use the mice function called "md.pattern" to get a better understanding of the pattern of missing data
+md.pattern(farms_FIPS)
+
+#Use predictive mean matching as imputation method for filling in missing values
+farms_FIPS_data <- mice(farms_FIPS,m=5,maxit=100,meth='pmm',seed=500)
 
