@@ -1,7 +1,7 @@
-#Dataset 1 - Load raw data for wholesale distribution by County FIPS
+#<<<<<<Dataset 1 - Load raw data for wholesale distribution by County FIPS>>>>>>
 wholesale <- read.csv("ny_county_wholesale.csv", header = TRUE)
 
-#Examine the imported dataset
+#------Examine the imported dataset------
 
 #Display the first six records
 head(wholesale)
@@ -31,11 +31,10 @@ summary(wholesale_est)
 #Wholesale Establishment Dataset - Cleaned
 
 
-
-#Dataset 2 - Load raw data for poverty data by County FIPS
+#<<<<<<Dataset 2 - Load raw data for poverty data by County FIPS>>>>>>
 poverty <- read.csv("US_county_poverty.csv", header = TRUE)
 
-#Examine the imported dataset
+#------Examine the imported dataset------
 
 #Display the first six records
 head(poverty)
@@ -75,9 +74,9 @@ ny_poverty$Poverty_Per_All_Ages <- as.numeric(as.character(ny_poverty$Poverty_Pe
 #Verify dataframe changes
 str(ny_poverty)
 
-#Use a Kernal Density Plot to view the distribution of poverty percentage and median income
-pp_plot <-density(ny_poverty$Poverty_Per_All_Ages)
-plot(pp_plot)
+#Use a Kernal Density Plot to view the distribution of poverty percentage all ages 
+pov_plot <-density(ny_poverty$Poverty_Per_All_Ages)
+plot(pov_plot)
 
 #Based on graph, look specifically at counties with poverty percentages less than 10 and greater than 20
 
@@ -91,18 +90,16 @@ high_pov <- subset(ny_poverty, Poverty_Per_All_Ages >20)
 #Poverty by County Dataset - Cleaned
 
 
-
-#Dataset 3 - Drought data by County FIPS
+#<<<<<<Dataset 3 - Drought data by County FIPS>>>>>>
 #See metadata file; both datasets are small enough that all pre-processing steps can be done in MS Excel.
 
 #Files ny_county_D2 and ny_county_D3 - Cleaned
 
 
-
-#Dataset 4 - Load raw data for farm data by County FIPS
+#<<<<<<Dataset 4 - Load raw data for farm data by County FIPS>>>>>>
 farms <- read.csv("ny_county_farms.csv", header = TRUE)
 
-#Examine the imported dataset
+#------Examine the imported dataset------
 
 #Display the first six records
 head(farms)
@@ -113,20 +110,7 @@ summary(farms)
 #Display structure of the data frame (individual data types)
 str(farms)
 
-#Check if there are any duplicate records
-library(data.table)
-dt = data.table(farms)
-dt[duplicated("County"), cbind(.SD[1], number = .N), by = "County"]
-
-#Check if there are any duplicate Counties
-any(duplicated(farms$"County"))
-
-sum(duplicated(farms$County))
-
-#Step 1 - Create data frame with a list of ids and the number of times they occur
-length(unique(farms$County))
-length(unique(farms$County)) == nrow(farms)
-
+#Check if there are any duplicate county records
 n_occur <- data.frame(table(farms$County))
 n_occur[n_occur$Freq > 1,]
 farms[farms$County %in% n_occur$Var1[n_occur$Freq > 1],]
@@ -146,18 +130,46 @@ FIPS <- as.data.frame(sapply(FIPS, toupper))
 #Append County FIPS to farms dataset
 farms_FIPS <- merge(FIPS,farms, by=c("County"))
 
-#Note: only 53 farms records appended to the FIPS lookup
-
 #List rows of data that have missing values
 farms_FIPS[!complete.cases(farms_FIPS),]
 
-#Results of analysis indicate that Putnum, Seneca and Westchester have missing data under "Cropped_Acres" and "Acres_Rented"
+#Results of analysis indicate that Putnum, Seneca and Westchester have missing data 
 
-#Load the mice package in R (imputing missing values with plausible data values)
+#Load the VIM and mice packages in R (used for imputing missing values with plausible data values)
 
 #Use the mice function called "md.pattern" to get a better understanding of the pattern of missing data
 md.pattern(farms_FIPS)
 
-#Use predictive mean matching as imputation method for filling in missing values
-farms_FIPS_data <- mice(farms_FIPS,m=5,maxit=100,meth='pmm',seed=500)
+#Use Multivariate Imputation by Chained Equations (mice) to calculate missing values in dataset.
+#Include Random Forest function as a regression and classification method to accommodate interactions and non-linearities.
+#Data Source: http://r-statistics.co/Missing-Value-Treatment-With-R.html (Section 4.3 mice)
+
+miceMod <- mice(farms_FIPS[, !names(farms_FIPS) %in% "medv"], method="rf")  # perform mice imputation, based on random forests.
+farms_alldata <- complete(miceMod)  # generate the completed data
+anyNA(farms_alldata)
+
+#Missing Values Populated
+
+#Create new field titled "Avg_CA_Per_Farm" = Average Cropped Acres Per Farm 
+farms_alldata$Avg_CA_Per_Farm <- with(farms_alldata, Cropped_Acres/Total_Farms)
+
+#Next display descriptive stats and structure of the new data frame
+summary(farms_alldata)
+str(farms_alldata)
+
+#Use a Kernal Density Plot to view the distribution of small farms <= 100 cropped acres
+sf_plot <-density(farms_alldata$Avg_CA_Per_Farm)
+plot(sf_plot)
+
+small_farms <- subset(farms_alldata, Avg_CA_Per_Farm <=100)
+#26 counties have been identified as having average cropped acres per farm <100 (small farm)
+
+#Small Farms Dataset - Cleaned
+
+#All coding complete - All 5 Datasets ready for analysis (November 7th, 2016)
+
+
+
+
+
 
