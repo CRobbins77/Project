@@ -1,3 +1,4 @@
+#CIS512 Final Project R Code - Curtis Robbins
 #<<<<<<Dataset 1 - Load raw data for wholesale distribution by County FIPS>>>>>>
 wholesale <- read.csv("ny_county_wholesale.csv", header = TRUE)
 
@@ -162,7 +163,7 @@ sf_plot <-density(farms_alldata$Avg_CA_Per_Farm)
 plot(sf_plot)
 
 small_farms <- subset(farms_alldata, Avg_CA_Per_Farm <=100)
-#26 counties have been identified as having average cropped acres per farm <100 (small farm)
+#26 counties have been identified as having average cropped acres per farm <100 (concentration of small farms)
 
 #Small Farms Dataset - Cleaned
 
