@@ -29,7 +29,7 @@ summary(wholesale_est)
 #FINDINGS - urban counties closer to NYC have a higher number of wholesale trade establishments
 #Since the median number of establishments is 3, and the average is 13, score weights will need to be applied appropriately.
 
-#Wholesale Establishment Dataset - Cleaned
+#Dataset 1 (wholesale_est) - Wholesale Establishments by County - Cleaned
 
 
 #<<<<<<Dataset 2 - Load raw data for poverty data by County FIPS>>>>>>
@@ -88,13 +88,13 @@ high_pov <- subset(ny_poverty, Poverty_Per_All_Ages >20)
 #With Medium Household Income of $34K and $48K respectively for Bronx and Kings County, poverty percentages remain very high because 
 #of the concentration of poverty in this urban area;counties represent the Bronx and Brooklyn in the five boroughs of NYC. 
 
-#Poverty by County Dataset - Cleaned
+#Dataset 2 (ny_poverty) - Poverty by NYS County - Cleaned
 
 
 #<<<<<<Dataset 3 - Drought data by County FIPS>>>>>>
 #See metadata file; both datasets are small enough that all pre-processing steps can be done in MS Excel.
 
-#Files ny_county_D2 and ny_county_D3 - Cleaned
+#Dataset 3 (ny_county_D2) and (ny_county_D3) Drought by County - Cleaned
 
 
 #<<<<<<Dataset 4 - Load raw data for farm data by County FIPS>>>>>>
@@ -136,20 +136,50 @@ farms_FIPS[!complete.cases(farms_FIPS),]
 
 #Results of analysis indicate that Putnum, Seneca and Westchester have missing data 
 
-#Load the VIM and mice packages in R (used for imputing missing values with plausible data values)
+#<<<<<Load the VIM and mice packages in R (used for imputing missing values with plausible data values)>>>>>
 
 #Use the mice function called "md.pattern" to get a better understanding of the pattern of missing data
 md.pattern(farms_FIPS)
 
-#Use Multivariate Imputation by Chained Equations (mice) to calculate missing values in dataset.
+#OPTION 1 - Try using a random sampling with replacement method to fill in the missing fields.
+#One option is the R package: Multivariate Imputation by Chained Equations (mice) that is used to calculate missing values in dataset.
 #Include Random Forest function as a regression and classification method to accommodate interactions and non-linearities.
 #Data Source: http://r-statistics.co/Missing-Value-Treatment-With-R.html (Section 4.3 mice)
 
-miceMod <- mice(farms_FIPS[, !names(farms_FIPS) %in% "medv"], method="rf")  # perform mice imputation, based on random forests.
-farms_alldata <- complete(miceMod)  # generate the completed data
-anyNA(farms_alldata)
+#miceMod <- mice(farms_FIPS[, !names(farms_FIPS) %in% "medv"], method="rf")  # perform mice imputation, based on random forests.
+#farms_alldata <- complete(miceMod)  # generate the completed data
+#anyNA(farms_alldata)
 
-#Missing Values Populated
+#The missing values are now populated.
+#Look at the populated fields, do the numbers make sense?  Can cropped acres be more than farmed acres?
+#After further review, the cropped acres field does not appear to be an independent variable.
+#In fact there exists a distinct relationship between farmed acres and cropped acres.
+
+#Therefore, peforming a bootstrapping analysis with mice (random forests) does not provide accurate results.
+
+#OPTION 2 - Perform a linear regression analysis to determine an equation for calculating the missing fields.
+
+with (farms_FIPS,plot (Farmed_Acres,Cropped_Acres))
+
+lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
+
+#Coefficients:
+#(Intercept)  Farmed_Acres  
+#1617.9660        0.4748 
+
+#Equation of a line: y=mx+b
+#Cropped_Acres=(.4748)*(Farmed_Acres) + 1617.97
+#Test calculation in dataset, results are consistent with data patterns
+
+#Populate missing Cropped_Acres fields using the regression equation.
+#Load the zoo package in R
+
+#library(zoo)
+#farms_FIPS$Cropped_Acres
+
+
+#Replace remaining NAs under Acres_Rented fields with 0
+#farms_alldata <- farms_FIPS[is.na(farms_FIPS)] <- 0
 
 #Create new field titled "Avg_CA_Per_Farm" = Average Cropped Acres Per Farm 
 farms_alldata$Avg_CA_Per_Farm <- with(farms_alldata, Cropped_Acres/Total_Farms)
@@ -165,9 +195,10 @@ plot(sf_plot)
 small_farms <- subset(farms_alldata, Avg_CA_Per_Farm <=100)
 #26 counties have been identified as having average cropped acres per farm <100 (concentration of small farms)
 
-#Small Farms Dataset - Cleaned
+#Dataset 4 (small_farms) - NYS Counties with a High Concentration of Small Farms - Cleaned
 
-#All coding complete - All 5 Datasets ready for analysis (November 7th, 2016)
+#<<<<< All coding complete - All 5 Datasets ready for analysis (11-07-16)>>>>>
+#<<<<< Dataset #4 revised after further review of bootstrapping analysis (11-22-16)>>>>>
 
 
 
