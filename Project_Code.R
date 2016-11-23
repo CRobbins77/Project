@@ -2,7 +2,7 @@
 
 #%%%%%% PHASE 1 - DATA CLEANING %%%%%%
 
-#<<<<<<Dataset 1 - Load raw data for wholesale distribution by County FIPS>>>>>>
+#<<<<<<DATASET 1 - Load raw data for wholesale distribution by County FIPS>>>>>>
 wholesale <- read.csv("ny_county_wholesale.csv", header = TRUE)
 
 #------Examine the imported dataset------
@@ -35,7 +35,8 @@ summary(wholesale_est)
 #Dataset 1 (wholesale_est) - Wholesale Establishments by County - Cleaned
 
 
-#<<<<<<Dataset 2 - Load raw data for poverty data by County FIPS>>>>>>
+
+#<<<<<<DATASET 2 - Load raw data for poverty data by County FIPS>>>>>>
 poverty <- read.csv("US_county_poverty.csv", header = TRUE)
 
 #------Examine the imported dataset------
@@ -92,15 +93,26 @@ high_pov <- subset(ny_poverty, Poverty_Per_All_Ages >20)
 #of the concentration of poverty in this urban area;counties represent the Bronx and Brooklyn in the five boroughs of NYC. 
 
 #Dataset 2 (ny_poverty) - Poverty by NYS County - Cleaned
+#Note: There are a total of 62 Counties in NYS
 
 
-#<<<<<<Dataset 3 - Drought data by County FIPS>>>>>>
+#<<<<<<DATASET 3 - Load Drought data (2 files) by County FIPS>>>>>>
 #See metadata file; both datasets are small enough that all pre-processing steps can be done in MS Excel.
 
-#Dataset 3 (ny_county_D2) and (ny_county_D3) Drought by County - Cleaned
+severe_drought <- read.csv("ny_county_D2.csv", header = TRUE)
+extreme_drought <- read.csv("ny_county_D3.csv", header = TRUE)
+
+#Append extreme_drought classfication to severe_drought classification by county.
+ny_drought_con <- merge(severe_drought,extreme_drought, by=c("FIPS", "State", "County"), all=TRUE)
+
+#Replace remaining NAs under D3_Class with 0
+ny_drought_con[is.na(ny_drought_con)] <- 0
+
+#Dataset 3 (ny_drought_con) Drought Conditions by County - Cleaned
 
 
-#<<<<<<Dataset 4 - Load raw data for farm data by County FIPS>>>>>>
+
+#<<<<<<DATASET 4 - Load raw data for farm data by County FIPS>>>>>>
 farms <- read.csv("ny_county_farms.csv", header = TRUE)
 
 #------Examine the imported dataset------
@@ -169,7 +181,7 @@ lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
 #Equation of a line: y=mx+b
 #Cropped_Acres=(.4748)*(Farmed_Acres) + 1617.97
 
-#Check R2 value - This model accounts for 56% of the variance, adequate for estimating the missing values. 
+#Check R2 value - This model accounts for 56% of the variance, a more accurate method for estimating the missing values. 
 farms.lm <- lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
 summary(farms.lm)$r.squared
 #0.5641398
@@ -197,7 +209,8 @@ sf_plot <-density(farms_FIPS$Avg_CA_Per_Farm)
 plot(sf_plot)
 
 small_farms <- subset(farms_FIPS, Avg_CA_Per_Farm <=100)
-#27 counties have been identified as having average cropped acres per farm <100 (concentration of small farms)
+#27 out of 53 counties with an agricultural district in NYS have been identified as having 
+#average cropped acres per farm <100 (concentration of small farms)
 #Note: Using the bootstrapping method for missing values only 26 counties were identified.
 
 #Dataset 4 (small_farms) - NYS Counties with a High Concentration of Small Farms - Cleaned
@@ -205,8 +218,21 @@ small_farms <- subset(farms_FIPS, Avg_CA_Per_Farm <=100)
 #<<<<< All coding complete - All 5 Datasets ready for analysis (11-07-16)>>>>>
 #<<<<< Dataset #4 revised after further review of bootstrapping analysis (11-22-16)>>>>>
 
+
+
+
 #%%%%%% PHASE 2 - ANALYSIS STAGE 1 %%%%%%
 
+#To prepare for hierarchical clustering begin by merging the following datasets in this order:
+#small_farms, ny_poverty, wholesale_est and ny_drought_con
+#The goal is to create a complete dataset retaining all 26 counties identified as having a high concentration of small farms.
 
+#Merge 1 - Append ny_poverty field to small_farms dataset 
+farms_alldata <- merge(small_farms,ny_poverty, by=c("FIPS", "State", "County"), all=TRUE)
 
+#Merge 2 - Append wholesale_est field to small_farms dataset 
+#ny_drought_con <- merge(severe_drought,extreme_drought, by=c("FIPS", "State", "County"), all=TRUE)
+
+#Merge 3 - Append ny_drought_con fields to small_farms dataset 
+#ny_drought_con <- merge(severe_drought,extreme_drought, by=c("FIPS", "State", "County"), all=TRUE)
 
