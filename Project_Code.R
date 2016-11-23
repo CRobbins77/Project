@@ -1,4 +1,7 @@
 #CIS512 Final Project R Code - Curtis Robbins
+
+#%%%%%% PHASE 1 - DATA CLEANING %%%%%%
+
 #<<<<<<Dataset 1 - Load raw data for wholesale distribution by County FIPS>>>>>>
 wholesale <- read.csv("ny_county_wholesale.csv", header = TRUE)
 
@@ -158,49 +161,51 @@ md.pattern(farms_FIPS)
 #Therefore, peforming a bootstrapping analysis with mice (random forests) does not provide accurate results.
 
 #OPTION 2 - Perform a linear regression analysis to determine an equation for calculating the missing fields.
-
 with (farms_FIPS,plot (Farmed_Acres,Cropped_Acres))
-
 lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
-
 #Coefficients:
 #(Intercept)  Farmed_Acres  
 #1617.9660        0.4748 
-
 #Equation of a line: y=mx+b
 #Cropped_Acres=(.4748)*(Farmed_Acres) + 1617.97
-#Test calculation in dataset, results are consistent with data patterns
 
-#Populate missing Cropped_Acres fields using the regression equation.
-#Load the zoo package in R
+#Check R2 value - This model accounts for 56% of the variance, adequate for estimating the missing values. 
+farms.lm <- lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
+summary(farms.lm)$r.squared
+#0.5641398
 
-#library(zoo)
-#farms_FIPS$Cropped_Acres
-
+#Populate missing Cropped_Acres fields by County using the regression equation.
+#Putnum County
+farms_FIPS[35,5]=3490
+#Seneca County
+farms_FIPS[41,5]=63211
+#Westchester County
+farms_FIPS[51,5]=4682
 
 #Replace remaining NAs under Acres_Rented fields with 0
-#farms_alldata <- farms_FIPS[is.na(farms_FIPS)] <- 0
+farms_FIPS[is.na(farms_FIPS)] <- 0
 
-#Create new field titled "Avg_CA_Per_Farm" = Average Cropped Acres Per Farm 
-farms_alldata$Avg_CA_Per_Farm <- with(farms_alldata, Cropped_Acres/Total_Farms)
+#Create new field titled "Avg_CA_Per_Farm" = Average Cropped Acres Per Farm rounded to zero decimal places 
+farms_FIPS$Avg_CA_Per_Farm <- with(farms_FIPS, round(Cropped_Acres/Total_Farms),0)
 
 #Next display descriptive stats and structure of the new data frame
-summary(farms_alldata)
-str(farms_alldata)
+summary(farms_FIPS)
+str(farms_FIPS)
 
 #Use a Kernal Density Plot to view the distribution of small farms <= 100 cropped acres
-sf_plot <-density(farms_alldata$Avg_CA_Per_Farm)
+sf_plot <-density(farms_FIPS$Avg_CA_Per_Farm)
 plot(sf_plot)
 
-small_farms <- subset(farms_alldata, Avg_CA_Per_Farm <=100)
-#26 counties have been identified as having average cropped acres per farm <100 (concentration of small farms)
+small_farms <- subset(farms_FIPS, Avg_CA_Per_Farm <=100)
+#27 counties have been identified as having average cropped acres per farm <100 (concentration of small farms)
+#Note: Using the bootstrapping method for missing values only 26 counties were identified.
 
 #Dataset 4 (small_farms) - NYS Counties with a High Concentration of Small Farms - Cleaned
 
 #<<<<< All coding complete - All 5 Datasets ready for analysis (11-07-16)>>>>>
 #<<<<< Dataset #4 revised after further review of bootstrapping analysis (11-22-16)>>>>>
 
-
+#%%%%%% PHASE 2 - ANALYSIS STAGE 1 %%%%%%
 
 
 
