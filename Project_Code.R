@@ -228,7 +228,7 @@ small_farms <- subset(farms_FIPS, Avg_CA_Per_Farm <=100)
 #The goal is to create a complete dataset retaining all 26 counties identified as having a high concentration of small farms.
 
 #Merge 1 - Append ny_poverty field to small_farms dataset 
-farms_alldata <- merge(small_farms,ny_poverty, by=c("FIPS", "State", "County"), all=TRUE)
+#farms_alldata <- merge(small_farms,ny_poverty, by=c("FIPS", "State", "County"), all=TRUE)
 
 #Merge 2 - Append wholesale_est field to small_farms dataset 
 #ny_drought_con <- merge(severe_drought,extreme_drought, by=c("FIPS", "State", "County"), all=TRUE)
@@ -236,3 +236,4 @@ farms_alldata <- merge(small_farms,ny_poverty, by=c("FIPS", "State", "County"), 
 #Merge 3 - Append ny_drought_con fields to small_farms dataset 
 #ny_drought_con <- merge(severe_drought,extreme_drought, by=c("FIPS", "State", "County"), all=TRUE)
 
+#Test of System
