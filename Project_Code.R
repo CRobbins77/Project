@@ -224,16 +224,24 @@ small_farms <- subset(farms_FIPS, Avg_CA_Per_Farm <=100)
 #%%%%%% PHASE 2 - ANALYSIS STAGE 1 %%%%%%
 
 #To prepare for hierarchical clustering begin by merging the following datasets in this order:
-#small_farms, ny_poverty, wholesale_est and ny_drought_con
-#The goal is to create a complete dataset retaining all 26 counties identified as having a high concentration of small farms.
 
-#Merge 1 - Append ny_poverty field to small_farms dataset 
-#farms_alldata <- merge(small_farms,ny_poverty, by=c("FIPS", "State", "County"), all=TRUE)
+#Perform a left outer join of the small_farms dataset and the remaining 3 data frames.
+farms_alldata <- merge(small_farms,ny_drought_con, by=c("FIPS"), all.x=TRUE)
+farms_alldata <- merge(farms_alldata,wholesale_est, by.x=c("FIPS"), by.y=c("County_FIPS"), all.x=TRUE)
+farms_alldata <- merge(farms_alldata,ny_poverty, by=c("FIPS"), all.x=TRUE)
 
-#Merge 2 - Append wholesale_est field to small_farms dataset 
-#ny_drought_con <- merge(severe_drought,extreme_drought, by=c("FIPS", "State", "County"), all=TRUE)
+#Create a function to remove all of the unwanted columns after merging and rename columns accordingly.
+col.dont.want <- c("State.x", "County.y", "State_FIPS", "County_FIPS", "State.y", "County")
+farms_alldata <- farms_alldata[,!names(farms_alldata) %in% col.dont.want,drop=F]
+names(farms_alldata)[names(farms_alldata)=="County.x"]<-"County"
 
-#Merge 3 - Append ny_drought_con fields to small_farms dataset 
-#ny_drought_con <- merge(severe_drought,extreme_drought, by=c("FIPS", "State", "County"), all=TRUE)
+#Replace remaining NAs under farms_alldata fields with 0
+farms_alldata[is.na(farms_alldata)] <- 0
 
-#Test of System
+#farms_alldata <- merge(small_farms,ny_poverty,by=c("FIPS"))
+#library(ggplot2)
+#ggplot(farms_alldata,aes(Acres_Owned,Acres_Rented,color=Poverty_Per_All_Ages)) + geom_point()
+
+
+
+
