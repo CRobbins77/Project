@@ -221,7 +221,7 @@ small_farms <- subset(farms_FIPS, Avg_CA_Per_Farm <=100)
 
 
 
-#%%%%%% PHASE 2 - ANALYSIS STAGE 1 %%%%%%
+#%%%%%% PHASE 2 - ANALYSIS STAGE %%%%%%
 
 #To prepare for hierarchical clustering begin by merging the following datasets in this order:
 
@@ -231,16 +231,69 @@ farms_alldata <- merge(farms_alldata,wholesale_est, by.x=c("FIPS"), by.y=c("Coun
 farms_alldata <- merge(farms_alldata,ny_poverty, by=c("FIPS"), all.x=TRUE)
 
 #Create a function to remove all of the unwanted columns after merging and rename columns accordingly.
-col.dont.want <- c("State.x", "County.y", "State_FIPS", "County_FIPS", "State.y", "County")
-farms_alldata <- farms_alldata[,!names(farms_alldata) %in% col.dont.want,drop=F]
-names(farms_alldata)[names(farms_alldata)=="County.x"]<-"County"
+col.dont.want <- c("State.x", "County.y", "State_FIPS", "County_FIPS", "State.y", "County", "Acres_Owned", "Acres_Rented", "Poverty_Est_All_Ages", 
+  "Poverty_Est_Age_0.17","Poverty_Per_Age_.0.17", "Poverty_Est_Age_5.17", "Poverty_Per_Age_5.17", "Med_HH_Inc")
+analysis_dataset <- farms_alldata[,!names(farms_alldata) %in% col.dont.want,drop=F]
+names(analysis_dataset)[names(analysis_dataset)=="County.x"]<-"County"
 
 #Replace remaining NAs under farms_alldata fields with 0
-farms_alldata[is.na(farms_alldata)] <- 0
+analysis_dataset[is.na(analysis_dataset)] <- 0
 
-#farms_alldata <- merge(small_farms,ny_poverty,by=c("FIPS"))
-#library(ggplot2)
-#ggplot(farms_alldata,aes(Acres_Owned,Acres_Rented,color=Poverty_Per_All_Ages)) + geom_point()
+#Display structure of the data frame (individual data types)
+str(analysis_dataset)
+summary(analysis_dataset)
+
+#Convert all integers (Total_Acres, Farmed_Acres and Total_Farms) to numeric values before categorizing.
+analysis_dataset$Total_Acres <- as.numeric(as.character(analysis_dataset$Total_Acres))
+analysis_dataset$Farmed_Acres <- as.numeric(as.character(analysis_dataset$Farmed_Acres))
+analysis_dataset$Total_Farms <- as.numeric(as.character(analysis_dataset$Total_Farms))
+
+#Because of the dataset having a unique field for each county (27 different FIPS codes), a decision tree in R could not be used.
+#Therefore, the identified fields will be categorized and subsets will be created to identify viable counties for investment.
+
+#Determine distribution ranges for data by calculating th mean and standard deviation for each field to be used in the analysis:
+#Total_Farms, Total_Establishments and Poverty_Per_All_Ages (Note: Drought is already classified as extreme and severe)
+sd(analysis_dataset$Poverty_Per_All_Ages,na.rm=FALSE) #SD 3.858 and Mean is 14.07 (Class: Low<10.2 / Average 10.2-17.9 / High>17.9)
+sd(analysis_dataset$Total_Establishments,na.rm=FALSE) #SD 7.111 and Mean is 3.481 (Class: Low<1 / Average 1-10.6 / High>10.6)
+sd(analysis_dataset$Total_Farms,na.rm=FALSE) #SD 350.175 and Mean is 544.9 (Class: Low<194.7 / Average 194.7-895.1 / High>895.1)
+
+#Next classify the above fields based on the calculated distribution ranges.
+analysis_dataset$farms.type<-ordered(cut(analysis_dataset$Total_Farms,c(0,195,895,1600), labels=c("Low","Average","High")))
+analysis_dataset$poverty.type<-ordered(cut(analysis_dataset$Poverty_Per_All_Ages,c(0,10.2,17.9,20), labels=c("Low","Average","High")))
+analysis_dataset$establishments.type<-ordered(cut(analysis_dataset$Total_Establishments,c(-1,.95,11,35), labels=c("Low","Average","High")))
+
+#Finally, classifying the Drought field as Severe (D2), Extreme (D3) or Normal (0)
+analysis_dataset$drought.type<-ifelse(analysis_dataset$D3_Class>0,"Extreme", ifelse(analysis_dataset$D2_Class>0, "Severe", "Normal"))
+
+#Because of the dataset having 27 unique rows, a decision tree could not be used.
+#Therefore the a subset of the data will be created based on classification results.
+
+#Convert drought.type field to a factor
+analysis_dataset$drought.type <- as.ordered(as.character(analysis_dataset$drought.type))
+
+findings.sub <- analysis_dataset[with(analysis_dataset,drought.type=="Extreme"),]
+
+#Findings from analysis identified two prospective counties for investment:
+#1-Chemung County (FIPS Code = 36015)- Average # small farms, high % of poverty, average # of wholesale dist. and extreme drought conditions.
+#2-Wayne County (FIPS Code = 36117)- High # small farms, average % of poverty, average # of wholesale dist. and extreme drought conditions.
+
+#Run regression analysis on farmed acres and cropped acres to further refine the analysis.
+#Looking to see the capacity for expansion of cropped acres in these two counties.
+
+#rmb(formula=~farms.type+poverty.type+establishments.type, data=analysis_dataset)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
