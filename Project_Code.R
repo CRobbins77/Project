@@ -1,5 +1,9 @@
 #CIS512 Final Project R Code - Curtis Robbins
 
+#%%%%%% LOADED PACKAGES %%%%%%
+
+#Load the VIM and mice packages in R (used for inputing missing values in Dataset #4)>>>>>
+
 #%%%%%% PHASE 1 - DATA CLEANING %%%%%%
 
 #<<<<<<DATASET 1 - Load raw data for wholesale distribution by County FIPS>>>>>>
@@ -26,14 +30,9 @@ wholesale_est <- aggregate (Total_Establishments~County_FIPS, sum,data=wholesale
 est_plot <-density(wholesale_est$Total_Establishments)
 plot(est_plot)
 
-#Run descriptive stats again on new dataset
-summary(wholesale_est)
-
 #FINDINGS - urban counties closer to NYC have a higher number of wholesale trade establishments
-#Since the median number of establishments is 3, and the average is 13, score weights will need to be applied appropriately.
 
 #Dataset 1 (wholesale_est) - Wholesale Establishments by County - Cleaned
-
 
 
 #<<<<<<DATASET 2 - Load raw data for poverty data by County FIPS>>>>>>
@@ -76,9 +75,6 @@ str(ny_poverty)
 #Since poverty percentage per all ages is a factor, it must be converted to a numeric value before graphing
 ny_poverty$Poverty_Per_All_Ages <- as.numeric(as.character(ny_poverty$Poverty_Per_All_Ages))
 
-#Verify dataframe changes
-str(ny_poverty)
-
 #Use a Kernal Density Plot to view the distribution of poverty percentage all ages 
 pov_plot <-density(ny_poverty$Poverty_Per_All_Ages)
 plot(pov_plot)
@@ -92,8 +88,9 @@ high_pov <- subset(ny_poverty, Poverty_Per_All_Ages >20)
 #With Medium Household Income of $34K and $48K respectively for Bronx and Kings County, poverty percentages remain very high because 
 #of the concentration of poverty in this urban area;counties represent the Bronx and Brooklyn in the five boroughs of NYC. 
 
+#FINDINGS - There are a total of 62 Counties in NYS
+
 #Dataset 2 (ny_poverty) - Poverty by NYS County - Cleaned
-#Note: There are a total of 62 Counties in NYS
 
 
 #<<<<<<DATASET 3 - Load Drought data (2 files) by County FIPS>>>>>>
@@ -109,7 +106,6 @@ ny_drought_con <- merge(severe_drought,extreme_drought, by=c("FIPS", "State", "C
 ny_drought_con[is.na(ny_drought_con)] <- 0
 
 #Dataset 3 (ny_drought_con) Drought Conditions by County - Cleaned
-
 
 
 #<<<<<<DATASET 4 - Load raw data for farm data by County FIPS>>>>>>
@@ -151,13 +147,11 @@ farms_FIPS[!complete.cases(farms_FIPS),]
 
 #Results of analysis indicate that Putnum, Seneca and Westchester have missing data 
 
-#<<<<<Load the VIM and mice packages in R (used for imputing missing values with plausible data values)>>>>>
-
 #Use the mice function called "md.pattern" to get a better understanding of the pattern of missing data
 md.pattern(farms_FIPS)
 
 #OPTION 1 - Try using a random sampling with replacement method to fill in the missing fields.
-#One option is the R package: Multivariate Imputation by Chained Equations (mice) that is used to calculate missing values in dataset.
+#One option is to use the R package: Multivariate Imputation by Chained Equations (mice) to calculate missing values in the dataset.
 #Include Random Forest function as a regression and classification method to accommodate interactions and non-linearities.
 #Data Source: http://r-statistics.co/Missing-Value-Treatment-With-R.html (Section 4.3 mice)
 
@@ -223,7 +217,7 @@ small_farms <- subset(farms_FIPS, Avg_CA_Per_Farm <=100)
 
 #%%%%%% PHASE 2 - ANALYSIS STAGE %%%%%%
 
-#To prepare for hierarchical clustering begin by merging the following datasets in this order:
+#To prepare for the first stage of the analysis begin by merging the following datasets.
 
 #Perform a left outer join of the small_farms dataset and the remaining 3 data frames.
 farms_alldata <- merge(small_farms,ny_drought_con, by=c("FIPS"), all.x=TRUE)
@@ -248,30 +242,37 @@ analysis_dataset$Total_Acres <- as.numeric(as.character(analysis_dataset$Total_A
 analysis_dataset$Farmed_Acres <- as.numeric(as.character(analysis_dataset$Farmed_Acres))
 analysis_dataset$Total_Farms <- as.numeric(as.character(analysis_dataset$Total_Farms))
 
-#Because of the dataset having a unique field for each county (27 different FIPS codes), a decision tree in R could not be used.
-#Therefore, the identified fields will be categorized and subsets will be created to identify viable counties for investment.
+#Because the dataset has a unique field for each county (27 different FIPS codes), a decision tree in R could not be used.
+#Instead, a scoring matrix will be utilized to rank each county based on the predetermined categorical variables.
 
-#Determine distribution ranges for data by calculating th mean and standard deviation for each field to be used in the analysis:
+#Begin by assigning scores (low = 1 /average = 3 / high = 5) across the 4 categorical variables for each county.
+#Based on the counting principle, this will produce 81 different combinations (3x3x3x3).
+
+#Determine distribution ranges for data by calculating the mean and standard deviation for each field to be used in the analysis:
 #Total_Farms, Total_Establishments and Poverty_Per_All_Ages (Note: Drought is already classified as extreme and severe)
 sd(analysis_dataset$Poverty_Per_All_Ages,na.rm=FALSE) #SD 3.858 and Mean is 14.07 (Class: Low<10.2 / Average 10.2-17.9 / High>17.9)
 sd(analysis_dataset$Total_Establishments,na.rm=FALSE) #SD 7.111 and Mean is 3.481 (Class: Low<1 / Average 1-10.6 / High>10.6)
 sd(analysis_dataset$Total_Farms,na.rm=FALSE) #SD 350.175 and Mean is 544.9 (Class: Low<194.7 / Average 194.7-895.1 / High>895.1)
 
 #Next classify the above fields based on the calculated distribution ranges.
-analysis_dataset$farms.type<-ordered(cut(analysis_dataset$Total_Farms,c(0,195,895,1600), labels=c("Low","Average","High")))
-analysis_dataset$poverty.type<-ordered(cut(analysis_dataset$Poverty_Per_All_Ages,c(0,10.2,17.9,20), labels=c("Low","Average","High")))
-analysis_dataset$establishments.type<-ordered(cut(analysis_dataset$Total_Establishments,c(-1,.95,11,35), labels=c("Low","Average","High")))
+analysis_dataset$farms.type<-ordered(cut(analysis_dataset$Total_Farms,c(0,195,895,1600), labels=c(1,3,5)))
+analysis_dataset$poverty.type<-ordered(cut(analysis_dataset$Poverty_Per_All_Ages,c(0,10.2,17.9,20), labels=c(1,3,5)))
+analysis_dataset$establishments.type<-ordered(cut(analysis_dataset$Total_Establishments,c(-1,.95,11,35), labels=c(1,3,5)))
 
-#Finally, classifying the Drought field as Severe (D2), Extreme (D3) or Normal (0)
-analysis_dataset$drought.type<-ifelse(analysis_dataset$D3_Class>0,"Extreme", ifelse(analysis_dataset$D2_Class>0, "Severe", "Normal"))
+#Create a function to convert the rankings to numeric values, retaining the original values (1,3,5)
+#as.numeric.factor <- function(x) {as.numeric(levels(x))[x]} 
+analysis_dataset$farms.score <- as.numeric.factor (analysis_dataset$farms.type)
+analysis_dataset$poverty.score <- as.numeric.factor (analysis_dataset$poverty.type)
+analysis_dataset$establishments.score <- as.numeric.factor (analysis_dataset$establishments.type)
 
-#Because of the dataset having 27 unique rows, a decision tree could not be used.
-#Therefore the a subset of the data will be created based on classification results.
+#Finally, classifying the Drought field as Normal = 1 / Severe = 3 / Extreme = 5
+analysis_dataset$drought.score<-ifelse(analysis_dataset$D3_Class>0,5, ifelse(analysis_dataset$D2_Class>0,3,1))
 
-#Convert drought.type field to a factor
-analysis_dataset$drought.type <- as.ordered(as.character(analysis_dataset$drought.type))
+#Create a new total.score field by aggregating all 4 scores in the dataset.
+analysis_dataset$total.score <-analysis_dataset$farms.score + analysis_dataset$poverty.score + analysis_dataset$establishments.score + analysis_dataset$drought.score
 
-findings.sub <- analysis_dataset[with(analysis_dataset,drought.type=="Extreme"),]
+#Counties with total scores >= 16 and drought score not equal to "normal" aka 1 will indicate viable counties for further analysis.
+inv_counties <- subset(analysis_dataset, total.score >= 16 & drought.score >1 )
 
 #Findings from analysis identified two prospective counties for investment:
 #1-Chemung County (FIPS Code = 36015)- Average # small farms, high % of poverty, average # of wholesale dist. and extreme drought conditions.
@@ -280,7 +281,6 @@ findings.sub <- analysis_dataset[with(analysis_dataset,drought.type=="Extreme"),
 #Run regression analysis on farmed acres and cropped acres to further refine the analysis.
 #Looking to see the capacity for expansion of cropped acres in these two counties.
 
-#rmb(formula=~farms.type+poverty.type+establishments.type, data=analysis_dataset)
 
 
 
