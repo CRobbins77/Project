@@ -3,6 +3,8 @@
 #%%%%%% LOADED PACKAGES %%%%%%
 
 #Load the VIM and mice packages in R (used for inputing missing values in Dataset #4)>>>>>
+#The following packages should also be loaded in RStudio before running: 
+#"datasets", "graphics", "grDevices", "methods", "Rcpp", "stats" and "utils" 
 
 #%%%%%% PHASE 1 - DATA CLEANING %%%%%%
 
@@ -300,6 +302,7 @@ target_co <- head(inv_counties[order(inv_counties$per.increase, decreasing=T),],
 #%%%%%%%%%% Code and Analysis Complete %%%%%%%%%%%
 
 
+#%%%%%%%%%% Plotting Part of the Project %%%%%%%%%%%%
 
 
 
