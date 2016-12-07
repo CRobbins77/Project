@@ -260,7 +260,7 @@ analysis_dataset$poverty.type<-ordered(cut(analysis_dataset$Poverty_Per_All_Ages
 analysis_dataset$establishments.type<-ordered(cut(analysis_dataset$Total_Establishments,c(-1,.95,11,35), labels=c(1,3,5)))
 
 #Create a function to convert the rankings to numeric values, retaining the original values (1,3,5)
-#as.numeric.factor <- function(x) {as.numeric(levels(x))[x]} 
+as.numeric.factor <- function(x) {as.numeric(levels(x))[x]} 
 analysis_dataset$farms.score <- as.numeric.factor (analysis_dataset$farms.type)
 analysis_dataset$poverty.score <- as.numeric.factor (analysis_dataset$poverty.type)
 analysis_dataset$establishments.score <- as.numeric.factor (analysis_dataset$establishments.type)
