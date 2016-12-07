@@ -213,8 +213,6 @@ small_farms <- subset(farms_FIPS, Avg_CA_Per_Farm <=100)
 #<<<<< Dataset #4 revised after further review of bootstrapping analysis (11-22-16)>>>>>
 
 
-
-
 #%%%%%% PHASE 2 - ANALYSIS STAGE %%%%%%
 
 #To prepare for the first stage of the analysis begin by merging the following datasets.
@@ -265,23 +263,41 @@ analysis_dataset$farms.score <- as.numeric.factor (analysis_dataset$farms.type)
 analysis_dataset$poverty.score <- as.numeric.factor (analysis_dataset$poverty.type)
 analysis_dataset$establishments.score <- as.numeric.factor (analysis_dataset$establishments.type)
 
-#Finally, classifying the Drought field as Normal = 1 / Severe = 3 / Extreme = 5
+#Classify the Drought field as Normal = 1 / Severe = 3 / Extreme = 5
 analysis_dataset$drought.score<-ifelse(analysis_dataset$D3_Class>0,5, ifelse(analysis_dataset$D2_Class>0,3,1))
 
 #Create a new total.score field by aggregating all 4 scores in the dataset.
 analysis_dataset$total.score <-analysis_dataset$farms.score + analysis_dataset$poverty.score + analysis_dataset$establishments.score + analysis_dataset$drought.score
 
-#Counties with total scores >= 16 and drought score not equal to "normal" aka 1 will indicate viable counties for further analysis.
+#Determine the capacity for expansion of cropped acres among the three counties.
+#Begin by determining the additional capacity for crop acres using the previous regression equation for cropped acres vs. farmed acres (Dataset 4)
+#Cropped_Acres=(.4748)*(Farmed_Acres) + 1617.97
+
+#Create a function to automate the calculation. 
+regression.eq <- function(x) {as.numeric((.4748)*(x)) + 1617.97} 
+analysis_dataset$capacity <- regression.eq (analysis_dataset$Farmed_Acres)
+
+#Determine the percentage that cropped acres can proportionally increase before increasing farmed acres.
+analysis_dataset$per.increase <- ((analysis_dataset$capacity - analysis_dataset$Cropped_Acres)/analysis_dataset$Cropped_Acres) * 100
+
+#Prioritize counties based on their opportunities and challenges.
+
+#Step 1: Identify counties with total scores >= 16 and drought.score >1 (severe and extreme drought conditions) 
 inv_counties <- subset(analysis_dataset, total.score >= 16 & drought.score >1 )
+#The analysis identified three prospective counties as potential candidates for investment.
+#Chautauqua County (FIPS Code = 36013), Chemung County (FIPS Code = 36015) and Wayne County (FIPS Code = 36117)
 
-#Findings from analysis identified two prospective counties for investment:
-#1-Chemung County (FIPS Code = 36015)- Average # small farms, high % of poverty, average # of wholesale dist. and extreme drought conditions.
-#2-Wayne County (FIPS Code = 36117)- High # small farms, average % of poverty, average # of wholesale dist. and extreme drought conditions.
+#Step 2: Examine the three identified counties based on their capacity for increasing cropped acres.
+#Eliminate Wayne County even though it has the greatest capacity for cropland; the reason why their cropped acres
+#are not proportional to the rest of the NYS counties (outlier) is because they are the top apple producing county. 
+inv_counties <- inv_counties[-c(3),]
 
-#Run regression analysis on farmed acres and cropped acres to further refine the analysis.
-#Looking to see the capacity for expansion of cropped acres in these two counties.
+#Step 3: From the remaining counties, identify a single county for investment based on highest per.increase.
+target_co <- head(inv_counties[order(inv_counties$per.increase, decreasing=T),],n = 1)
 
-
+#Final Results - Chautauqua County will be targeted for investment because they can increase their cropped acres by 36%,
+#prior to investing in additional farmed acres, offering the most potential for both short-term (drought) and long-term investment (increased production).
+#%%%%%%%%%% Code and Analysis Complete %%%%%%%%%%%
 
 
 
