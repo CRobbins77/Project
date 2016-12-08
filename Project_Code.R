@@ -147,9 +147,9 @@ farms_FIPS <- merge(FIPS,farms, by=c("County"))
 #List rows of data that have missing values
 farms_FIPS[!complete.cases(farms_FIPS),]
 
-#Results of analysis indicate that Putnum, Seneca and Westchester have missing data 
+#Results of analysis indicate that Putnum, Seneca and Westchester have missing data. 
 
-#Use the mice function called "md.pattern" to get a better understanding of the pattern of missing data
+#Use the mice function called "md.pattern" to get a better understanding of the pattern of missing data.
 md.pattern(farms_FIPS)
 
 #OPTION 1 - Try using a random sampling with replacement method to fill in the missing fields.
@@ -171,6 +171,8 @@ md.pattern(farms_FIPS)
 #OPTION 2 - Perform a linear regression analysis to determine an equation for calculating the missing fields.
 with (farms_FIPS,plot (Farmed_Acres,Cropped_Acres))
 lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
+abline(lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS))
+
 #Coefficients:
 #(Intercept)  Farmed_Acres  
 #1617.9660        0.4748 
@@ -178,19 +180,25 @@ lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
 #Cropped_Acres=(.4748)*(Farmed_Acres) + 1617.97
 
 #Check R2 value - This model accounts for 56% of the variance, a more accurate method for estimating the missing values. 
-farms.lm <- lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
+farms.lm <- lm(Farmed_Acres~Cropped_Acres,data=farms_FIPS)
 summary(farms.lm)$r.squared
+
+#farms.lm <- lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
+#summary(farms.lm)$r.squared
 #0.5641398
 
 #Populate missing Cropped_Acres fields by County using the regression equation.
-#Putnum County
-farms_FIPS[35,5]=3490
-#Seneca County
-farms_FIPS[41,5]=63211
-#Westchester County
-farms_FIPS[51,5]=4682
+#Putnum County = 3490
+farms_FIPS[35,5]=(farms_FIPS[35,4] * .4748) + 1617.97
+#Seneca County = 63,210
+farms_FIPS[41,5]=(farms_FIPS[41,4] * .4748) + 1617.97
+#Westchester County = 4,680
+farms_FIPS[51,5]=(farms_FIPS[51,4] * .4748) + 1617.97
 
-#Replace remaining NAs under Acres_Rented fields with 0
+#Round new values under Cropped_Acres to zero decimal places
+farms_FIPS$Cropped_Acres <- round(farms_FIPS$Cropped_Acres, digits=-1)
+
+#Replace remaining NAs under Acres_Rented fields with 0 since Acres_Rented = Total Acres
 farms_FIPS[is.na(farms_FIPS)] <- 0
 
 #Create new field titled "Avg_CA_Per_Farm" = Average Cropped Acres Per Farm rounded to zero decimal places 
@@ -302,11 +310,16 @@ target_co <- head(inv_counties[order(inv_counties$per.increase, decreasing=T),],
 #%%%%%%%%%% Code and Analysis Complete %%%%%%%%%%%
 
 
-#%%%%%%%%%% Plotting Part of the Project %%%%%%%%%%%%
+#%%%%%%%%%% Supporting Graphics for Project %%%%%%%%%%%%
 
+#Linear Regression Plot
 
-
-
+with (farms_FIPS, plot(Farmed_Acres, Cropped_Acres, 
+                       pch = 20, cex = 2.0, col="blue", main = "Farmed Acres vs. Cropped Acres", 
+                       xlab = "Farmed Acres", ylab = "Cropped Acres",
+                       xlim = c(0,300000), ylim = c(0,200000)))
+lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
+abline(lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS))
 
 
 
