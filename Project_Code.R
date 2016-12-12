@@ -1,10 +1,11 @@
 #CIS512 Final Project R Code - Curtis Robbins
+#Semester - Fall 2016
 
 #%%%%%% LOADED PACKAGES %%%%%%
 
 #Load the VIM and mice packages in R (used for inputing missing values in Dataset #4)>>>>>
 #The following packages should also be loaded in RStudio before running: 
-#"datasets", "graphics", "grDevices", "methods", "Rcpp", "stats" and "utils" 
+#"assertthat", datasets", "dplyr", "ggplot2", "graphics", "grDevices", "methods", "Rcpp", "reshape2", "scales", "stats" and "utils" 
 
 #%%%%%% PHASE 1 - DATA CLEANING %%%%%%
 
@@ -180,12 +181,11 @@ abline(lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS))
 #Cropped_Acres=(.4748)*(Farmed_Acres) + 1617.97
 
 #Check R2 value - This model accounts for 56% of the variance, a more accurate method for estimating the missing values. 
-farms.lm <- lm(Farmed_Acres~Cropped_Acres,data=farms_FIPS)
+farms.lm <- lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
 summary(farms.lm)$r.squared
-
-#farms.lm <- lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
-#summary(farms.lm)$r.squared
-#0.5641398
+#R-Sq=.5641
+summary(farms.lm)
+#p-value=2.14e-11
 
 #Populate missing Cropped_Acres fields by County using the regression equation.
 #Putnum County = 3490
@@ -297,16 +297,11 @@ inv_counties <- subset(analysis_dataset, total.score >= 16 & drought.score >1 )
 #The analysis identified three prospective counties as potential candidates for investment.
 #Chautauqua County (FIPS Code = 36013), Chemung County (FIPS Code = 36015) and Wayne County (FIPS Code = 36117)
 
-#Step 2: Examine the three identified counties based on their capacity for increasing cropped acres.
-#Eliminate Wayne County even though it has the greatest capacity for cropland; the reason why their cropped acres
-#are not proportional to the rest of the NYS counties (outlier) is because they are the top apple producing county. 
-inv_counties <- inv_counties[-c(3),]
-
-#Step 3: From the remaining counties, identify a single county for investment based on highest per.increase.
+#Step 2: From the remaining counties, identify a single county for investment (greatest potential for increasing cropped acres = largest per.increase value) 
 target_co <- head(inv_counties[order(inv_counties$per.increase, decreasing=T),],n = 1)
 
-#Final Results - Chautauqua County will be targeted for investment because they can increase their cropped acres by 36%,
-#prior to investing in additional farmed acres, offering the most potential for both short-term (drought) and long-term investment (increased production).
+#Final Results - Wayne County will be targeted for investment because they can potentially increase their cropped acres by 360%,
+#before investing in additional farmed acres, offering both short-term (drought) and long-term (increased production) economic growth opportunities.
 #%%%%%%%%%% Code and Analysis Complete %%%%%%%%%%%
 
 
@@ -315,18 +310,25 @@ target_co <- head(inv_counties[order(inv_counties$per.increase, decreasing=T),],
 #Linear Regression Plot
 
 with (farms_FIPS, plot(Farmed_Acres, Cropped_Acres, 
-                       pch = 20, cex = 2.0, col="blue", main = "Farmed Acres vs. Cropped Acres", 
+                       pch = 20, cex = 2.0, col="blue", main = "Farmed Acres vs. Cropped Acres", sub = "(Scatter Plot with Regression Line)", 
                        xlab = "Farmed Acres", ylab = "Cropped Acres",
                        xlim = c(0,300000), ylim = c(0,200000)))
 lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
 abline(lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS))
 
+#Select a subset of variables to create a heatmap
+myvars <- c("County", "farms.score", "poverty.score", "establishments.score", "drought.score")
+plotdata <- analysis_dataset[myvars]
+plotdata <- arrange(plotdata, desc(County))
 
+#Heatmap for Data Visualization
+data.m <- melt(plotdata)
+heatmap <- ggplot(data.m, aes(variable,County)) +
+  geom_tile(aes(fill=value),colour="white") + 
+  scale_fill_gradient(low = "white", high = "steelblue")
+print(heatmap)
 
-
-
-
-
+#%%%%%%%%%% Supporting Graphics Complete %%%%%%%%%%%
 
 
 
