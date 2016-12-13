@@ -185,7 +185,7 @@ farms.lm <- lm(Cropped_Acres~Farmed_Acres,data=farms_FIPS)
 summary(farms.lm)$r.squared
 #R-Sq=.5641
 summary(farms.lm)
-#p-value=2.14e-11
+#p-value=3.321e-10
 
 #Populate missing Cropped_Acres fields by County using the regression equation.
 #Putnum County = 3490
